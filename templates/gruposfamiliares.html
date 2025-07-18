@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evaluación de Grupos Familiares - Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f8f8f8;
+            display: flex;
+            height: 100vh;
+            color: #333;
+        }
+
+        .dashboard-container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            padding: 20px 0;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow-y: auto;
+            justify-content: space-between;
+            box-sizing: border-box;
+            height: 100%;
+        }
+
+        .sidebar h2 {
+            color: #007bff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            text-align: center;
+            width: 100%;
+            padding: 0 10px;
+            box-sizing: border-box;
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .menu-list li {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .menu-list li:last-of-type {
+            margin-bottom: 0;
+        }
+
+        .menu-list a {
+            display: block;
+            padding: 20px 20px;
+            color: #e0e0e0;
+            text-decoration: none;
+            font-size: 1.2em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            border-radius: 5px;
+            margin: 0 10px;
+        }
+
+        .menu-list a:hover {
+            background-color: rgba(255, 0, 0, 0.1);
+            color: #ff4d4d;
+        }
+
+        .menu-list a::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s ease;
+            z-index: 1;
+        }
+
+        .menu-list a:hover::before {
+            left: 100%;
+        }
+
+        .submenu {
+            list-style: none;
+            padding-left: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        .menu-list li.has-submenu.active > .submenu {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .submenu li a {
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: normal;
+            color: #ccc;
+            text-align: center;
+            border-radius: 0;
+            border-bottom: none;
+            margin: 0;
+        }
+
+        .submenu li a:hover {
+            background-color: rgba(255, 0, 0, 0.05);
+            color: #ff8080;
+        }
+
+        .main-content {
+            flex-grow: 1;
+            padding: 30px;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            overflow-y: auto;
+        }
+
+        .main-content h1 {
+            color: #4169E1;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-align: center;
+        }
+
+        .chart-container {
+            width: 98%;
+            max-width: 1920px;
+            min-height: 720px;
+            background-color: #f0f0f0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            color: #666;
+            text-align: center;
+            border: 1px dashed #ccc;
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .chart-container canvas {
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .back-button {
+            padding: 12px 25px;
+            background-color: #007bff;
+            color: white;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-decoration: none;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            display: block;
+            margin: 20px auto;
+            text-align: center;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .leaders-info {
+            width: 100%;
+            max-width: 1920px;
+            background-color: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .responsibility-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .responsibility-table th,
+        .responsibility-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .responsibility-table th {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            font-weight: bold;
+            font-size: 1.1em;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .responsibility-table td.missing-leaders {
+            color: #dc3545;
+            font-weight: normal;
+        }
+
+        .responsibility-table td.pending-leaders {
+            color: #007bff;
+            font-weight: normal;
+        }
+
+        .responsibility-table td.reported-leaders {
+            color: #1B5E20;
+            font-weight: normal;
+        }
+
+        .responsibility-table ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .responsibility-table li {
+            margin-bottom: 5px;
+        }
+
+        .section-title {
+            font-size: 2em;
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .data-table {
+            width: 100%;
+            max-width: 1920px;
+            border-collapse: separate;
+            border-spacing: 0;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            margin-top: 20px;
+            overflow: hidden;
+            font-size: 0.95em;
+        }
+
+        .data-table th,
+        .data-table td {
+            border: 1px solid #e0e0e0;
+            padding: 14px 16px;
+            text-align: center;
+            vertical-align: middle;
+            transition: background-color 0.3s ease;
+        }
+
+        .data-table th {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            padding: 16px;
+       
+
+        }
+
+        .data-table td {
+            background-color: #ffffff;
+            color: #2c3e50;
+        }
+
+        .data-table tr:nth-child(even) td {
+            background-color: #f9fafb;
+        }
+
+        .data-table tr:hover td {
+            background-color: #e9f1ff;
+        }
+
+        .data-table th:first-child,
+        .data-table td:first-child {
+            border-left: none;
+        }
+
+        .data-table th:last-child,
+        .data-table td:last-child {
+            border-right: none;
+        }
+
+        .data-table tr:first-child th {
+            border-top: none;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .data-table tr.leader-divider {
+            border-bottom: 2px solid #a0adda; /* Línea gruesa roja para separar líderes */
+        }
+
+        .data-table td[rowspan] {
+            background-color: #f1f3f5;
+            font-weight: 600;
+            color: #2c3e50;
+            border-right: 2px solid #007bff;
+            vertical-align: middle;
+            font-size: 1em;
+        }
+
+        .data-table td.metric-cell {
+            font-size: 0.9em;
+            color: #34495e;
+        }
+
+        .data-table td.data-cell {
+            font-weight: 500;
+        }
+
+        .data-table tr.metric-row {
+            border-bottom: 1px solid #d1d5db;
+        }
+
+
+        
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <h2>Criterios a Evaluar</h2>
+            <ul class="menu-list">
+                <li class="has-submenu">
+                    <a href="#" data-target="crecimiento">Crecimiento</a>
+                    <ul class="submenu" id="crecimiento-submenu">
+                        <li><a href="#" data-action="crecimiento-general">Crecimiento General</a></li>
+                    </ul>
+                </li>
+                <li><a href="#" data-action="conversiones">Conversiones</a></li>
+                <li><a href="#" data-action="planeando">Planeando</a></li>
+                <li><a href="#" data-action="informe">Informe</a></li>
+                <li><a href="#" data-action="posicion-grupo">Posición de Grupo</a></li>
+                <li><a href="#" data-action="evaluacion-general">Evaluación General</a></li>
+            </ul>
+            <a href="/bienvenida" class="back-button">Menú Principal</a>
+        </aside>
+
+        <main class="main-content">
+            <h1 id="main-title">Bienvenido a la Evaluación de Grupos Familiares</h1>
+            <div id="chart-area-container">
+                <p>Selecciona una opción del menú para ver las gráficas aquí.</p>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, getDocs, orderBy, query, where, Timestamp, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYwD2MKsOWpYOG_Qgxg_WQZ-cgYatbtYY",
+            authDomain: "app-fuente-de-vida-817bb.firebaseapp.com",
+            databaseURL: "https://app-fuente-de-vida-817bb-default-rtdb.firebaseio.com",
+            projectId: "app-fuente-de-vida-817bb",
+            storageBucket: "app-fuente-de-vida-817bb.firebasestorage.app",
+            messagingSenderId: "1066255605422",
+            appId: "1:1066255605422:web:d4f1e4b3d19cb2c9abd73f",
+            measurementId: "G-HE76QPSHWQ"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
+            console.log("Registrando Chart.js y ChartDataLabels...");
+            Chart.register(ChartDataLabels);
+        } else {
+            console.error("Error: chartjs-plugin-datalabels no está cargado.");
+        }
+
+        let myCharts = {};
+
+        const colorPalette = [
+            { baseColor: 'rgba(50, 100, 100, 0.9)', patternType: 'diagonal-lines' },
+            { baseColor: 'rgba(150, 80, 0, 0.9)', patternType: 'dots' },
+            { baseColor: 'rgba(30, 80, 150, 0.9)', patternType: 'lines' },
+            { baseColor: 'rgba(90, 60, 120, 0.9)', patternType: 'dots' },
+            { baseColor: 'rgba(150, 40, 60, 0.9)', patternType: 'diagonal-lines' },
+            { baseColor: 'rgba(100, 100, 100, 0.9)', patternType: 'lines' },
+            { baseColor: 'rgba(75, 192, 192, 0.9)', patternType: 'line' },
+            { baseColor: 'rgba(153, 102, 255, 0.9)', patternType: 'dot' },
+            { baseColor: 'rgba(255, 159, 64, 0.9)', patternType: 'dash' },
+            { baseColor: 'rgba(255, 99, 132, 0.9)', patternType: 'square' },
+            { baseColor: 'rgba(54, 162, 235, 0.9)', patternType: 'circle' }
+        ];
+
+        const customDatalabelsPlugin = {
+            id: 'customDatalabels',
+            afterDatasetsDraw(chart) {
+                const { ctx, data } = chart;
+                ctx.save();
+                data.datasets.forEach((dataset, datasetIndex) => {
+                    const meta = chart.getDatasetMeta(datasetIndex);
+                    meta.data.forEach((bar, index) => {
+                        const value = dataset.data[index];
+                        if (value <= 0) return;
+
+                        const names = dataset.leaderNames ? dataset.leaderNames[index] || '' : '';
+                        if (!names) return;
+
+                        const x = bar.x;
+                        const yTop = bar.y;
+
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '7px Segoe UI';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'top';
+                        ctx.shadowBlur = 5;
+                        ctx.shadowColor = 'rgba(0, 0, 0, 1)';
+                        const nameLines = names.split('\n');
+                        let offsetY = yTop + 5;
+                        nameLines.forEach(line => {
+                            ctx.fillText(line, x, offsetY);
+                            offsetY += 8;
+                        });
+
+                        ctx.shadowBlur = 0;
+                    });
+                });
+                ctx.restore();
+            }
+        };
+
+        function getSunday(d) {
+            d = new Date(d);
+            const dayOfWeek = d.getDay();
+            const daysToSubtract = dayOfWeek === 0 ? 0 : dayOfWeek;
+            const sunday = new Date(d);
+            sunday.setDate(d.getDate() - daysToSubtract);
+            sunday.setHours(0, 0, 0, 0);
+            sunday.setMilliseconds(0);
+            return sunday;
+        }
+
+        function getSaturday(d) {
+            d = new Date(d);
+            const sunday = getSunday(d);
+            const saturday = new Date(sunday);
+            saturday.setDate(sunday.getDate() + 6);
+            saturday.setHours(23, 59, 59, 999);
+            return saturday;
+        }
+
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function formatDateShort(date) {
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = date.toLocaleString('es-CO', { month: 'short' });
+            return `${day}-${month}`;
+        }
+
+        function createPattern(ctx, color, patternType = 'dots', size = 5) {
+            const patternCanvas = document.createElement('canvas');
+            const patternCtx = patternCanvas.getContext('2d');
+            patternCanvas.width = size * 2;
+            patternCanvas.height = size * 2;
+
+            patternCtx.fillStyle = color;
+            patternCtx.fillRect(0, 0, patternCanvas.width, patternCanvas.height);
+
+            patternCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            patternCtx.lineWidth = 1;
+
+            if (patternType === 'lines') {
+                patternCtx.beginPath();
+                patternCtx.moveTo(0, size);
+                patternCtx.lineTo(size * 2, size);
+                patternCtx.stroke();
+            } else if (patternType === 'dots') {
+                patternCtx.beginPath();
+                patternCtx.arc(size, size, size / 3, 0, Math.PI * 2);
+                patternCtx.fill();
+            } else if (patternType === 'diagonal-lines') {
+                patternCtx.beginPath();
+                patternCtx.moveTo(0, size * 2);
+                patternCtx.lineTo(size * 2, 0);
+                patternCtx.stroke();
+                patternCtx.moveTo(size, size * 2);
+                patternCtx.lineTo(size * 2, size);
+                patternCtx.stroke();
+            }
+
+            return ctx.createPattern(patternCanvas, 'repeat');
+        }
+
+        async function fetchLeadersAndPopulateMenu() {
+            const crecimientoSubmenu = document.getElementById('crecimiento-submenu');
+            const existingLeaderItems = crecimientoSubmenu.querySelectorAll('[data-leader-name]');
+            existingLeaderItems.forEach(item => item.remove());
+
+            const loadingItem = document.createElement('li');
+            loadingItem.innerHTML = `<a href="#">Cargando líderes...</a>`;
+            crecimientoSubmenu.appendChild(loadingItem);
+
+            try {
+                const usersCol = collection(db, 'usuarios');
+                const q = query(usersCol, where('rol', '==', 'Lider'));
+                const querySnapshot = await getDocs(q);
+
+                console.log(`Total de documentos encontrados con rol 'Lider': ${querySnapshot.size}`);
+
+                const leaders = [];
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                        leaders.push(data.nombre_usuario);
+                    } else {
+                        console.warn(`Documento sin nombre_usuario válido, ID: ${doc.id}, Datos:`, data);
+                    }
+                });
+
+                console.log(`Líderes válidos encontrados: ${leaders.length}`, leaders);
+
+                leaders.sort();
+
+                loadingItem.remove();
+
+                if (leaders.length > 0) {
+                    leaders.forEach(leaderName => {
+                        const listItem = document.createElement('li');
+                        listItem.innerHTML = `<a href="#" data-action="show-leader-chart" data-leader-name="${leaderName}">${leaderName}</a>`;
+                        crecimientoSubmenu.appendChild(listItem);
+                    });
+                    attachSubmenuLinkListeners();
+                } else {
+                    const noLeadersItem = document.createElement('li');
+                    noLeadersItem.innerHTML = `<a href="#">No se encontraron líderes.</a>`;
+                    crecimientoSubmenu.appendChild(noLeadersItem);
+                }
+
+            } catch (error) {
+                console.error("Error al obtener los líderes:", error);
+                loadingItem.remove();
+                const errorItem = document.createElement('li');
+                errorItem.innerHTML = `<a href="#" style="color: red;">Error al cargar líderes: ${error.message}.</a>`;
+                crecimientoSubmenu.appendChild(errorItem);
+            }
+        }
+
+        async function fetchAndProcessMeetingData(leaderName = null) {
+            const chartAreaContainer = document.getElementById('chart-area-container');
+            const mainTitle = document.getElementById('main-title');
+            
+            if (leaderName) {
+                mainTitle.textContent = `Reporte de Líder: ${leaderName}`;
+            } else {
+                mainTitle.textContent = "Gráficas de Crecimiento General";
+            }
+
+            chartAreaContainer.innerHTML = `<p>Cargando datos de reportes${leaderName ? ' para ' + leaderName : ' (general)'}...</p>`;
+
+            try {
+                const reportsCol = collection(db, 'reportes');
+                let q;
+
+                if (leaderName) {
+                    q = query(reportsCol, where('nombre_usuario', '==', leaderName), orderBy('fecha', 'asc'));
+                } else {
+                    q = query(reportsCol, orderBy('fecha', 'asc'));
+                }
+                
+                const querySnapshot = await getDocs(q);
+                console.log(`Reportes encontrados ${leaderName ? 'para ' + leaderName : 'en general'}: ${querySnapshot.size}`);
+
+                if (querySnapshot.empty) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron reportes ${leaderName ? 'para ' + leaderName : 'en la colección "reportes"'}</p>`;
+                    return;
+                }
+
+                let latestReportsByWeek = {};
+
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const timestamp = data.fecha;
+                    const reportLeaderName = data.nombre_usuario;
+
+                    if (!timestamp || typeof timestamp.toDate !== 'function' || !reportLeaderName) {
+                        console.warn('Documento de reporte sin timestamp o nombre_usuario válido, saltando:', doc.id, data);
+                        return;
+                    }
+
+                    const reportDate = timestamp.toDate();
+                    const sundayOfReport = getSunday(reportDate);
+                    const sundayKey = formatDate(sundayOfReport);
+
+                    if (leaderName) {
+                        if (!latestReportsByWeek[sundayKey] || reportDate > latestReportsByWeek[sundayKey].timestampDate) {
+                            latestReportsByWeek[sundayKey] = { ...data, timestampDate: reportDate };
+                            console.log(`Reporte para ${leaderName} en semana ${sundayKey}:`, data);
+                        }
+                    } else {
+                        if (!latestReportsByWeek[sundayKey]) {
+                            latestReportsByWeek[sundayKey] = {};
+                        }
+                        const existingReport = latestReportsByWeek[sundayKey][reportLeaderName];
+                        if (!existingReport || reportDate > existingReport.timestampDate) {
+                            latestReportsByWeek[sundayKey][reportLeaderName] = { ...data, timestampDate: reportDate };
+                        }
+                    }
+                });
+
+                let consolidatedWeeklyData = {};
+                let reportDates = [];
+
+                if (leaderName) {
+                    for (const sundayKey in latestReportsByWeek) {
+                        if (latestReportsByWeek.hasOwnProperty(sundayKey)) {
+                            if (!reportDates.includes(sundayKey)) {
+                                reportDates.push(sundayKey);
+                            }
+                            const report = latestReportsByWeek[sundayKey];
+                            consolidatedWeeklyData[sundayKey] = {
+                                evangelistica: {
+                                    adultos: report.reunion_evangelistica?.adultos || 0,
+                                    ninos: report.reunion_evangelistica?.ninos || 0
+                                },
+                                dominical: {
+                                    adultos: report.escuela_dominical?.adultos || 0,
+                                    ninos: report.escuela_dominical?.ninos || 0
+                                },
+                                milagros: {
+                                    adultos: report.culto_milagros?.adultos || 0,
+                                    ninos: report.culto_milagros?.ninos || 0
+                                }
+                            };
+                        }
+                    }
+                } else {
+                    for (const sundayKey in latestReportsByWeek) {
+                        if (latestReportsByWeek.hasOwnProperty(sundayKey)) {
+                            if (!reportDates.includes(sundayKey)) {
+                                reportDates.push(sundayKey);
+                            }
+                            
+                            consolidatedWeeklyData[sundayKey] = {
+                                evangelistica: { adultos: 0, ninos: 0 },
+                                dominical: { adultos: 0, ninos: 0 },
+                                milagros: { adultos: 0, ninos: 0 }
+                            };
+
+                            const leadersReportsThisWeek = latestReportsByWeek[sundayKey];
+                            for (const leaderNameInWeek in leadersReportsThisWeek) {
+                                if (leadersReportsThisWeek.hasOwnProperty(leaderNameInWeek)) {
+                                    const report = leadersReportsThisWeek[leaderNameInWeek];
+                                    consolidatedWeeklyData[sundayKey].evangelistica.adultos += report.reunion_evangelistica?.adultos || 0;
+                                    consolidatedWeeklyData[sundayKey].evangelistica.ninos += report.reunion_evangelistica?.ninos || 0;
+                                    consolidatedWeeklyData[sundayKey].dominical.adultos += report.escuela_dominical?.adultos || 0;
+                                    consolidatedWeeklyData[sundayKey].dominical.ninos += report.escuela_dominical?.ninos || 0;
+                                    consolidatedWeeklyData[sundayKey].milagros.adultos += report.culto_milagros?.adultos || 0;
+                                    consolidatedWeeklyData[sundayKey].milagros.ninos += report.culto_milagros?.ninos || 0;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                reportDates.sort((a, b) => new Date(a) - new Date(b));
+                const labels = reportDates.map(date => new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }));
+
+                console.log(`Fechas procesadas ${leaderName ? 'para ' + leaderName : 'en general'}:`, reportDates);
+                console.log(`Datos consolidados por semana ${leaderName ? 'para ' + leaderName : 'en general'}:`, consolidatedWeeklyData);
+
+                const evangelisticaAdultos = reportDates.map(date => consolidatedWeeklyData[date]?.evangelistica.adultos || 0);
+                const evangelisticaNinos = reportDates.map(date => consolidatedWeeklyData[date]?.evangelistica.ninos || 0);
+                const dominicalAdultos = reportDates.map(date => consolidatedWeeklyData[date]?.dominical.adultos || 0);
+                const dominicalNinos = reportDates.map(date => consolidatedWeeklyData[date]?.dominical.ninos || 0);
+                const milagrosAdultos = reportDates.map(date => consolidatedWeeklyData[date]?.milagros.adultos || 0);
+                const milagrosNinos = reportDates.map(date => consolidatedWeeklyData[date]?.milagros.ninos || 0);
+
+                if (labels.length === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron datos de reportes válidos para mostrar las gráficas ${leaderName ? 'para ' + leaderName : '(general)'}.</p>`;
+                    return;
+                }
+                
+                renderAllGrowthCharts(
+                    labels,
+                    { adultos: evangelisticaAdultos, ninos: evangelisticaNinos },
+                    { adultos: dominicalAdultos, ninos: dominicalNinos },
+                    { adultos: milagrosAdultos, ninos: milagrosNinos },
+                    leaderName
+                );
+
+            } catch (error) {
+                console.error(`Error al obtener o procesar los datos de crecimiento ${leaderName ? 'para ' + leaderName : '(general)'}:`, error);
+                chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar los datos de crecimiento${leaderName ? ' para ' + leaderName : ' (general)'}: ${error.message}.</p>`;
+            }
+        }
+
+        function renderAllGrowthCharts(labels, evangelisticaData, dominicalData, milagrosData, leaderName = null) {
+            const container = document.getElementById('chart-area-container');
+            container.innerHTML = '';
+
+            for (const chartId in myCharts) {
+                if (myCharts[chartId]) {
+                    myCharts[chartId].destroy();
+                }
+            }
+            myCharts = {};
+
+            const createChartContainer = (id) => {
+                const div = document.createElement('div');
+                div.className = 'chart-container';
+                div.innerHTML = `<canvas id="${id}"></canvas>`;
+                container.appendChild(div);
+                return div;
+            };
+
+            const chartSuffix = leaderName ? ` (${leaderName})` : '';
+
+            createChartContainer('chartEvangelistica');
+            renderIndividualChart(
+                'chartEvangelistica',
+                labels,
+                evangelisticaData.adultos,
+                evangelisticaData.ninos,
+                `Asistencia en Reuniones Evangelísticas${chartSuffix}`,
+                { baseColor: 'rgba(50, 100, 100, 0.9)', patternType: 'diagonal-lines' },
+                { baseColor: 'rgba(150, 80, 0, 0.9)', patternType: 'dots' }
+            );
+
+            createChartContainer('chartDominical');
+            renderIndividualChart(
+                'chartDominical',
+                labels,
+                dominicalData.adultos,
+                dominicalData.ninos,
+                `Asistencia en Servicio Dominical${chartSuffix}`,
+                { baseColor: 'rgba(30, 80, 150, 0.9)', patternType: 'lines' },
+                { baseColor: 'rgba(90, 60, 120, 0.9)', patternType: 'dots' }
+            );
+
+            createChartContainer('chartMilagros');
+            renderIndividualChart(
+                'chartMilagros',
+                labels,
+                milagrosData.adultos,
+                milagrosData.ninos,
+                `Asistencia en Servicio de Milagros${chartSuffix}`,
+                { baseColor: 'rgba(150, 40, 60, 0.9)', patternType: 'diagonal-lines' },
+                { baseColor: 'rgba(100, 100, 100, 0.9)', patternType: 'lines' }
+            );
+        }
+
+        function renderIndividualChart(chartId, labels, adultosData, ninosData, titleText, colorAdultosConfig, colorNinosConfig) {
+            const ctx = document.getElementById(chartId).getContext('2d');
+
+            if (myCharts[chartId]) {
+                myCharts[chartId].destroy();
+            }
+
+            const patternAdultos = createPattern(ctx, colorAdultosConfig.baseColor, colorAdultosConfig.patternType);
+            const patternNinos = createPattern(ctx, colorNinosConfig.baseColor, colorNinosConfig.patternType);
+
+            myCharts[chartId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Adultos',
+                            data: adultosData,
+                            backgroundColor: patternAdultos,
+                            borderColor: colorAdultosConfig.baseColor.replace('0.9', '1'),
+                            borderWidth: 1,
+                            categoryPercentage: 0.7,
+                            barPercentage: 0.8,
+                        },
+                        {
+                            label: 'Niños',
+                            data: ninosData,
+                            backgroundColor: patternNinos,
+                            borderColor: colorNinosConfig.baseColor.replace('0.9', '1'),
+                            borderWidth: 1,
+                            categoryPercentage: 0.7,
+                            barPercentage: 0.8,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: titleText,
+                            font: {
+                                size: 18,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                color: '#333'
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'center',
+                            align: 'center',
+                            formatter: (value) => value > 0 ? value : '',
+                            color: '#fff',
+                            font: {
+                                weight: 'bold'
+                            },
+                            textShadowBlur: 5,
+                            textShadowColor: 'rgba(0, 0, 0, 0.8)'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Domingo de la Semana',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Cantidad de Personas',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchAndProcessPlanningData() {
+            const chartAreaContainer = document.getElementById('chart-area-container');
+            const mainTitle = document.getElementById('main-title');
+            
+            mainTitle.textContent = "Hermanos Planeando";
+            chartAreaContainer.innerHTML = `<p>Cargando datos de hermanos planeando...</p>`;
+
+            try {
+                const usersCol = collection(db, 'usuarios');
+                const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+                const usersSnapshot = await getDocs(usersQuery);
+                const allLeaders = new Set();
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                        allLeaders.add(data.nombre_usuario);
+                    }
+                });
+                console.log("Todos los líderes registrados:", Array.from(allLeaders));
+
+                const reportsCol = collection(db, 'reportes');
+                const q = query(reportsCol, orderBy('fecha', 'asc'));
+                const querySnapshot = await getDocs(q);
+                console.log(`Reportes encontrados para hermanos planeando: ${querySnapshot.size}`);
+
+                if (querySnapshot.empty) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron reportes en la colección "reportes".</p>`;
+                    return;
+                }
+
+                let weeklyData = {};
+                let allWeeks = new Set();
+
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const leaderName = data.nombre_usuario;
+                    const timestamp = data.fecha;
+                    const planning = typeof data.hermanos_planeando === 'number' ? data.hermanos_planeando : 0;
+
+                    if (!timestamp || typeof timestamp.toDate !== 'function' || !leaderName || !allLeaders.has(leaderName)) {
+                        console.warn('Documento de reporte sin timestamp, nombre_usuario válido o líder no registrado, saltando:', doc.id, data);
+                        return;
+                    }
+
+                    const reportDate = timestamp.toDate();
+                    const sundayOfReport = getSunday(reportDate);
+                    const sundayKey = formatDate(sundayOfReport);
+
+                    if (!weeklyData[sundayKey]) {
+                        weeklyData[sundayKey] = {};
+                    }
+                    if (!weeklyData[sundayKey][leaderName] || reportDate > weeklyData[sundayKey][leaderName].timestampDate) {
+                        weeklyData[sundayKey][leaderName] = { planning, timestampDate: reportDate };
+                    }
+                    allWeeks.add(sundayKey);
+                });
+
+                let processedWeeklyData = {};
+                for (const sundayKey of allWeeks) {
+                    processedWeeklyData[sundayKey] = {};
+                    for (const leaderName in weeklyData[sundayKey]) {
+                        if (weeklyData[sundayKey].hasOwnProperty(leaderName)) {
+                            const planning = weeklyData[sundayKey][leaderName].planning;
+                            if (!processedWeeklyData[sundayKey][planning]) {
+                                processedWeeklyData[sundayKey][planning] = [];
+                            }
+                            processedWeeklyData[sundayKey][planning] = [
+                                ...new Set([...(processedWeeklyData[sundayKey][planning] || []), leaderName])
+                            ];
+                        }
+                    }
+                }
+
+                const sortedWeeks = Array.from(allWeeks).sort((a, b) => new Date(a) - new Date(b)).slice(-6);
+                const labels = sortedWeeks.map(date => new Date(date).toLocaleDateString('es-CO', { day: '2-digit', month: 'short' }));
+
+                if (sortedWeeks.length === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron reportes válidos para las semanas.</p>`;
+                    return;
+                }
+
+                const allPlanningValues = new Set();
+                for (const sundayKey of sortedWeeks) {
+                    for (const planningValue in processedWeeklyData[sundayKey]) {
+                        if (processedWeeklyData[sundayKey].hasOwnProperty(planningValue)) {
+                            allPlanningValues.add(Number(planningValue));
+                        }
+                    }
+                }
+                const sortedPlanningValues = Array.from(allPlanningValues).sort((a, b) => a - b);
+
+                console.log("Valores únicos de hermanos_planeando:", sortedPlanningValues);
+                console.log("Datos procesados por semana:", processedWeeklyData);
+
+                const datasets = sortedPlanningValues.map((planningValue, index) => {
+                    const data = sortedWeeks.map(sundayKey => {
+                        return processedWeeklyData[sundayKey] && processedWeeklyData[sundayKey][planningValue] ? 1 : 0;
+                    });
+
+                    const leaderNamesByWeek = sortedWeeks.map(sundayKey => {
+                        return processedWeeklyData[sundayKey] && processedWeeklyData[sundayKey][planningValue]
+                            ? processedWeeklyData[sundayKey][planningValue].sort().join('\n')
+                            : '';
+                    });
+
+                    console.log(`Leader names for dataset (${planningValue} Hermanos):`, leaderNamesByWeek);
+                    console.log(`Data for dataset (${planningValue} Hermanos):`, data.map(d => d * planningValue));
+
+                    const ctx = document.createElement('canvas').getContext('2d');
+                    const backgroundColor = createPattern(ctx, colorPalette[index % colorPalette.length].baseColor, colorPalette[index % colorPalette.length].patternType);
+
+                    return {
+                        label: `${planningValue} Hermanos`,
+                        data: data.map(d => d * planningValue),
+                        backgroundColor: backgroundColor,
+                        borderColor: colorPalette[index % colorPalette.length].baseColor.replace('0.9', '1'),
+                        borderRadius: 5,
+                        stack: `Stack ${planningValue}`,
+                        leaderNames: leaderNamesByWeek
+                    };
+                }).filter(dataset => dataset.data.some(value => value > 0));
+
+                console.log("Semanas procesadas:", labels);
+                console.log("Datasets para la gráfica:", datasets);
+
+                renderPlanningChart(labels, datasets, sortedWeeks, processedWeeklyData);
+
+            } catch (error) {
+                console.error("Error al obtener o procesar los datos de hermanos planeando:", error);
+                chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar los datos de hermanos planeando: ${error.message}.</p>`;
+            }
+        }
+
+        function renderPlanningChart(labels, datasets, sortedWeeks, weeklyData) {
+            const container = document.getElementById('chart-area-container');
+            container.innerHTML = '';
+
+            for (const chartId in myCharts) {
+                if (myCharts[chartId]) {
+                    myCharts[chartId].destroy();
+                }
+            }
+            myCharts = {};
+
+            const chartId = 'planningChart';
+            const div = document.createElement('div');
+            div.className = 'chart-container';
+            div.innerHTML = `<canvas id="${chartId}"></canvas>`;
+            container.appendChild(div);
+
+            const ctx = document.getElementById(chartId).getContext('2d');
+
+            myCharts[chartId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    indexAxis: 'x',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#333'
+                            }
+                        },
+                        datalabels: {
+                            display: true,
+                            anchor: 'center',
+                            align: 'center',
+                            formatter: (value) => {
+                                console.log("Rendering datalabel value:", value);
+                                return value > 0 ? value : '';
+                            },
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 12
+                            },
+                            textShadowBlur: 5,
+                            textShadowColor: 'rgba(0, 0, 0, 1)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const names = context.dataset.leaderNames[context.dataIndex] || 'Ninguno';
+                                    return `${context.dataset.label}: ${value}\nLíderes: ${names.replace('\n', ', ')}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            title: {
+                                display: false
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                }
+                            },
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Hermanos Planeando',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                },
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: {
+                            left: 10,
+                            right: 10,
+                            top: 20,
+                            bottom: 60
+                        }
+                    }
+                },
+                plugins: [customDatalabelsPlugin]
+            });
+        }
+
+        async function fetchAndProcessConversionsData() {
+            const chartAreaContainer = document.getElementById('chart-area-container');
+            const mainTitle = document.getElementById('main-title');
+            
+            mainTitle.textContent = "Conversiones de Nuevos Creyentes";
+            chartAreaContainer.innerHTML = `<p>Cargando datos de conversiones...</p>`;
+
+            try {
+                const usersCol = collection(db, 'usuarios');
+                const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+                const usersSnapshot = await getDocs(usersQuery);
+                const allLeaders = new Set();
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                        allLeaders.add(data.nombre_usuario);
+                    }
+                });
+                console.log("Todos los líderes registrados:", Array.from(allLeaders));
+
+                const reportsCol = collection(db, 'reportes');
+                const q = query(reportsCol);
+
+                const querySnapshot = await getDocs(q);
+                console.log(`Reportes encontrados para conversiones: ${querySnapshot.size}`);
+
+                let leaderConversions = {};
+                allLeaders.forEach(leader => {
+                    leaderConversions[leader] = 0;
+                });
+
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const leaderName = data.nombre_usuario;
+                    const conversions = typeof data.conversiones === 'number' ? data.conversiones : 0;
+
+                    if (leaderName && allLeaders.has(leaderName)) {
+                        leaderConversions[leaderName] = (leaderConversions[leaderName] || 0) + conversions;
+                    }
+                });
+
+                const sortedLeaders = Object.keys(leaderConversions).map(leader => {
+                    return { name: leader, conversions: leaderConversions[leader] };
+                }).sort((a, b) => b.conversions - a.conversions);
+
+                console.log("Conversiones por líder (ordenado):", sortedLeaders);
+
+                if (sortedLeaders.length === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron datos de conversiones para mostrar las gráficas.</p>`;
+                    return;
+                }
+                
+                renderConversionsChart(sortedLeaders);
+
+            } catch (error) {
+                console.error("Error al obtener o procesar los datos de conversiones:", error);
+                chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar los datos de conversiones: ${error.message}.</p>`;
+            }
+        }
+
+        function renderConversionsChart(data) {
+            const container = document.getElementById('chart-area-container');
+            container.innerHTML = '';
+
+            for (const chartId in myCharts) {
+                if (myCharts[chartId]) {
+                    myCharts[chartId].destroy();
+                }
+            }
+            myCharts = {};
+
+            const chartId = 'conversionsChart';
+            const div = document.createElement('div');
+            div.className = 'chart-container';
+            div.innerHTML = `<canvas id="${chartId}"></canvas>`;
+            container.appendChild(div);
+
+            const ctx = document.getElementById(chartId).getContext('2d');
+
+            const labels = data.map(item => item.name);
+            const conversions = data.map(item => item.conversions);
+
+            const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length].baseColor);
+            const borderColors = backgroundColors.map(color => color.replace('0.9', '1'));
+
+            myCharts[chartId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Conversiones Espirituales',
+                        data: conversions,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        hoverBackgroundColor: backgroundColors.map(color => color.replace('0.9', '1')),
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false,
+                            font: {
+                                size: 20,
+                                weight: 'bold'
+                            },
+                            color: '#333'
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                color: '#333'
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'center',
+                            align: 'center',
+                            formatter: (value) => value > 0 ? value : '',
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            textShadowBlur: 5,
+                            textShadowColor: 'rgba(0, 0, 0, 0.8)'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Número de Conversiones',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Líder',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function fetchAndProcessResponsabilityData() {
+            try {
+                console.log('Iniciando fetchAndProcessResponsabilityData...');
+                
+                const mainTitle = document.getElementById('main-title');
+                const chartAreaContainer = document.getElementById('chart-area-container');
+                
+                mainTitle.textContent = "Responsabilidad en el envío de Reportes";
+                chartAreaContainer.innerHTML = `<p>Cargando datos de responsabilidad...</p>`;
+
+                const today = new Date();
+                const currentSunday = getSunday(today);
+                const currentSaturday = getSaturday(today);
+                const currentWeekLabel = `${currentSunday.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })} - ${currentSaturday.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}`;
+
+                const usersCol = collection(db, 'usuarios');
+                const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+                const usersSnapshot = await getDocs(usersQuery);
+                const allLeaders = new Set();
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                        allLeaders.add(data.nombre_usuario.trim());
+                    }
+                });
+                console.log("Todos los líderes registrados:", Array.from(allLeaders));
+
+                if (allLeaders.size === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron líderes con rol 'Lider' en la colección 'usuarios'.</p>`;
+                    return;
+                }
+
+                const expectedLeaders = [
+                    'Aura Sinsajoa', 'Danilo Ordóñez', 'Estefanía Ordóñez', 'Juan Felipe Riobamba',
+                    'Juan José Cabrera', 'Ronal Pasichana', 'Vanessa Nazate', 'Ana Lucia Narváez',
+                    'Marcela Zamora', 'Neila Ortiz'
+                ];
+                expectedLeaders.forEach(leader => {
+                    if (!allLeaders.has(leader)) {
+                        console.warn(`Líder ${leader} no encontrado en la colección 'usuarios' o no registrado como 'Lider'.`);
+                    }
+                });
+
+                const startDate = new Date('2025-07-06T00:00:00-05:00');
+                const weeks = [];
+                let weekStart = getSunday(startDate);
+                while (weekStart <= currentSunday) {
+                    const weekEnd = getSaturday(weekStart);
+                    const weekLabel = `${weekStart.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })} - ${weekEnd.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}`;
+                    weeks.push({ startDate: weekStart, endDate: weekEnd, weekLabel });
+                    weekStart = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
+                }
+                const recentWeeks = weeks.slice(-5);
+
+                const responsabilityData = [];
+                for (const week of recentWeeks) {
+                    const weekDocRef = doc(db, 'responsabilidad_semanal', week.weekLabel);
+                    const weekDoc = await getDoc(weekDocRef);
+                    let missingLeaders = [];
+                    let reportedLeaders = [];
+                    let pendingLeaders = [];
+
+                    if (week.startDate.getTime() === currentSunday.getTime()) {
+                        const startTimestamp = Timestamp.fromDate(week.startDate);
+                        const endTimestamp = Timestamp.fromDate(week.endDate);
+                        const reportsQuery = query(
+                            collection(db, 'reportes'),
+                            where('fecha', '>=', startTimestamp),
+                            where('fecha', '<=', endTimestamp)
+                        );
+                        const reportsSnapshot = await getDocs(reportsQuery);
+                        reportedLeaders = new Set();
+                        reportsSnapshot.forEach(doc => {
+                            const data = doc.data();
+                            if (data.nombre_usuario && allLeaders.has(data.nombre_usuario.trim())) {
+                                reportedLeaders.add(data.nombre_usuario.trim());
+                            }
+                        });
+                        reportedLeaders = Array.from(reportedLeaders).sort();
+                        pendingLeaders = Array.from(allLeaders).filter(leader => !reportedLeaders.includes(leader)).sort();
+                        missingLeaders = [];
+                    } else if (week.startDate < currentSunday) {
+                        if (weekDoc.exists()) {
+                            const data = weekDoc.data();
+                            missingLeaders = (data.missingLeaders || []).map(leader => leader.trim()).sort();
+                            reportedLeaders = (data.reportedLeaders || []).map(leader => leader.trim()).sort();
+                        } else {
+                            const startTimestamp = Timestamp.fromDate(week.startDate);
+                            const endTimestamp = Timestamp.fromDate(week.endDate);
+                            const reportsQuery = query(
+                                collection(db, 'reportes'),
+                                where('fecha', '>=', startTimestamp),
+                                where('fecha', '<=', endTimestamp)
+                            );
+                            const reportsSnapshot = await getDocs(reportsQuery);
+                            reportedLeaders = new Set();
+                            reportsSnapshot.forEach(doc => {
+                                const data = doc.data();
+                                if (data.nombre_usuario && allLeaders.has(data.nombre_usuario.trim())) {
+                                    reportedLeaders.add(data.nombre_usuario.trim());
+                                }
+                            });
+                            reportedLeaders = Array.from(reportedLeaders).sort();
+                            missingLeaders = Array.from(allLeaders).filter(leader => !reportedLeaders.includes(leader)).sort();
+
+                            await setDoc(weekDocRef, {
+                                week: week.weekLabel,
+                                startDate: startTimestamp,
+                                endDate: endTimestamp,
+                                missingLeaders,
+                                reportedLeaders,
+                                createdAt: Timestamp.fromDate(new Date())
+                            });
+                            console.log(`Datos de la semana ${week.weekLabel} guardados en responsabilidad_semanal`);
+                        }
+                    } else {
+                        continue;
+                    }
+
+                    responsabilityData.push({
+                        week: week.weekLabel,
+                        startDate: week.startDate,
+                        endDate: week.endDate,
+                        missingLeaders,
+                        reportedLeaders,
+                        pendingLeaders
+                    });
+                }
+
+                console.log('Datos de responsabilidad procesados:', responsabilityData);
+
+                chartAreaContainer.innerHTML = `
+                    <div class="leaders-info">
+                        <h3></h3>
+                        <table class="responsibility-table">
+                            <thead>
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>Líderes que no enviaron su reporte</th>
+                                    <th>Líderes pendientes por enviar su reporte</th>
+                                    <th>Líderes que enviaron su reporte</th>
+                                </tr>
+                            </thead>
+                            <tbody id="responsabilityDetails"></tbody>
+                        </table>
+                    </div>
+                `;
+
+                showResponsabilityDetailsTable(responsabilityData);
+
+                console.log('Tabla de responsabilidad creada exitosamente');
+                
+            } catch (error) {
+                console.error('Error al obtener o procesar los datos de responsabilidad:', error);
+                chartAreaContainer.innerHTML = `
+                    <div style="padding: 20px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
+                        <h3>Error al cargar los datos de responsabilidad</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function showResponsabilityDetailsTable(responsabilityData) {
+            const detailsBody = document.getElementById('responsabilityDetails');
+            
+            if (!detailsBody) {
+                console.error('Elemento responsabilityDetails no encontrado');
+                return;
+            }
+            
+            let html = '';
+            
+            responsabilityData.forEach(item => {
+                html += `<tr>
+                    <td>${item.week}</td>
+                    <td class="missing-leaders">`;
+                if (item.missingLeaders.length > 0) {
+                    html += `<ul>`;
+                    item.missingLeaders.forEach(leader => {
+                        html += `<li>${leader}</li>`;
+                    });
+                    html += `</ul>`;
+                } else {
+                    html += `<p></p>`;
+                }
+                html += `</td>
+                    <td class="pending-leaders">`;
+                if (item.pendingLeaders.length > 0) {
+                    html += `<ul>`;
+                    item.pendingLeaders.forEach(leader => {
+                        html += `<li>${leader}</li>`;
+                    });
+                    html += `</ul>`;
+                } else {
+                    html += `<p></p>`;
+                }
+                html += `</td>
+                    <td class="reported-leaders">`;
+                if (item.reportedLeaders.length > 0) {
+                    html += `<ul>`;
+                    item.reportedLeaders.forEach(leader => {
+                        html += `<li>${leader}</li>`;
+                    });
+                    html += `</ul>`;
+                } else {
+                    html += `<p></p>`;
+                }
+                html += `</td>
+                </tr>`;
+            });
+            
+            detailsBody.innerHTML = html;
+        }
+
+        async function fetchAndProcessGroupRankingData() {
+            try {
+                console.log('Iniciando fetchAndProcessGroupRankingData...');
+                
+                const mainTitle = document.getElementById('main-title');
+                const chartAreaContainer = document.getElementById('chart-area-container');
+
+                mainTitle.textContent = "Ranking de Grupos Familiares";
+                chartAreaContainer.innerHTML = `<p>Cargando datos de ranking de grupos...</p>`;
+
+                const usersCol = collection(db, 'usuarios');
+                const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+                const usersSnapshot = await getDocs(usersQuery);
+                const allLeaders = new Set();
+                usersSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                        allLeaders.add(data.nombre_usuario.trim());
+                    }
+                });
+                console.log("Líderes registrados:", Array.from(allLeaders));
+
+                if (allLeaders.size === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron líderes con rol 'Lider' en la colección 'usuarios'.</p>`;
+                    return;
+                }
+
+                const reportsCol = collection(db, 'reportes');
+                const reportsQuery = query(reportsCol, orderBy('fecha', 'desc'));
+                const reportsSnapshot = await getDocs(reportsQuery);
+                console.log(`Reportes encontrados para ranking: ${reportsSnapshot.size}`);
+
+                let leaderMetrics = {};
+                allLeaders.forEach(leader => {
+                    leaderMetrics[leader] = {
+                        groupSize: 0,
+                        totalAttendance: 0,
+                        conversions: 0,
+                        planning: 0,
+                        totalScore: 0
+                    };
+                });
+
+                reportsSnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const leaderName = data.nombre_usuario;
+                    if (!leaderName || !allLeaders.has(leaderName)) return;
+
+                    const groupSize = typeof data.cantidad_personas === 'number' ? data.cantidad_personas : 0;
+                    leaderMetrics[leaderName].groupSize = Math.max(leaderMetrics[leaderName].groupSize, groupSize);
+
+                    const evangelisticaAdultos = data.reunion_evangelistica?.adultos || 0;
+                    const evangelisticaNinos = data.reunion_evangelistica?.ninos || 0;
+                    const dominicalAdultos = data.escuela_dominical?.adultos || 0;
+                    const dominicalNinos = data.escuela_dominical?.ninos || 0;
+                    const milagrosAdultos = data.culto_milagros?.adultos || 0;
+                    const milagrosNinos = data.culto_milagros?.ninos || 0;
+                    const totalAttendance = evangelisticaAdultos + evangelisticaNinos + dominicalAdultos + dominicalNinos + milagrosAdultos + milagrosNinos;
+                    leaderMetrics[leaderName].totalAttendance += totalAttendance;
+
+                    const conversions = typeof data.conversiones === 'number' ? data.conversiones : 0;
+                    leaderMetrics[leaderName].conversions += conversions;
+
+                    const planning = typeof data.hermanos_planeando === 'number' ? data.hermanos_planeando : 0;
+                    leaderMetrics[leaderName].planning += planning;
+                });
+
+                Object.keys(leaderMetrics).forEach(leader => {
+                    const metrics = leaderMetrics[leader];
+                    metrics.totalScore = metrics.groupSize + metrics.totalAttendance + metrics.conversions + metrics.planning;
+                });
+
+                const sortedLeaders = Object.keys(leaderMetrics).map(leader => ({
+                    name: leader,
+                    totalScore: leaderMetrics[leader].totalScore,
+                    groupSize: leaderMetrics[leader].groupSize,
+                    totalAttendance: leaderMetrics[leader].totalAttendance,
+                    conversions: leaderMetrics[leader].conversions,
+                    planning: leaderMetrics[leader].planning
+                })).sort((a, b) => b.totalScore - a.totalScore);
+
+                console.log("Ranking de líderes:", sortedLeaders);
+
+                if (sortedLeaders.length === 0) {
+                    chartAreaContainer.innerHTML = `<p>No se encontraron datos válidos para el ranking.</p>`;
+                    return;
+                }
+
+                renderGroupRankingChart(sortedLeaders);
+
+            } catch (error) {
+                console.error("Error al obtener o procesar los datos de ranking:", error);
+                chartAreaContainer.innerHTML = `
+                    <div style="padding: 20px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 5px; color: #721c24;">
+                        <h3>Error al cargar los datos de ranking</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderGroupRankingChart(data) {
+            const container = document.getElementById('chart-area-container');
+            container.innerHTML = '';
+
+            for (const chartId in myCharts) {
+                if (myCharts[chartId]) {
+                    myCharts[chartId].destroy();
+                }
+            }
+            myCharts = {};
+
+            const chartId = 'groupRankingChart';
+            const div = document.createElement('div');
+            div.className = 'chart-container';
+            div.innerHTML = `<canvas id="${chartId}"></canvas>`;
+            container.appendChild(div);
+
+            const ctx = document.getElementById(chartId).getContext('2d');
+
+            const labels = data.map(item => item.name);
+            const scores = data.map(item => item.totalScore);
+
+            const backgroundColors = labels.map((_, index) => colorPalette[index % colorPalette.length].baseColor);
+            const borderColors = backgroundColors.map(color => color.replace('0.9', '1'));
+
+            myCharts[chartId] = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Puntaje Total',
+                        data: scores,
+                        backgroundColor: backgroundColors,
+                        borderColor: borderColors,
+                        borderWidth: 1,
+                        borderRadius: 5,
+                        hoverBackgroundColor: backgroundColors.map(color => color.replace('0.9', '1'))
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: {
+                                    size: 14
+                                },
+                                color: '#333'
+                            }
+                        },
+                        datalabels: {
+                            anchor: 'center',
+                            align: 'center',
+                            formatter: (value) => value > 0 ? value : '',
+                            color: '#fff',
+                            font: {
+                                weight: 'bold',
+                                size: 14
+                            },
+                            textShadowBlur: 5,
+                            textShadowColor: 'rgba(0, 0, 0, 0.8)'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const index = context.dataIndex;
+                                    const leader = data[index];
+                                    return [
+                                        `Puntaje Total: ${leader.totalScore}`,
+                                        `Tamaño del Grupo: ${leader.groupSize}`,
+                                        `Asistencia Total: ${leader.totalAttendance}`,
+                                        `Conversiones: ${leader.conversions}`,
+                                        `Hermanos Planeando: ${leader.planning}`
+                                    ];
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Puntaje Total',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                stepSize: 1,
+                                callback: function(value) {
+                                    if (value % 1 === 0) {
+                                        return value;
+                                    }
+                                }
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Líder',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                font: {
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            },
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                },
+                plugins: [ChartDataLabels]
+            });
+        }
+
+
+
+
+
+
+        
+
+
+        async function fetchGeneralEvaluationData() {
+    console.log('Iniciando fetchGeneralEvaluationData...');
+    const usersCol = collection(db, 'usuarios');
+    const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+    const usersSnapshot = await getDocs(usersQuery);
+    const leaders = [];
+    const leaderIds = new Map(); // Mapa para almacenar nombre -> ID
+    usersSnapshot.forEach(doc => {
+        const data = doc.data();
+        if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+            leaders.push(data.nombre_usuario.trim());
+            leaderIds.set(data.nombre_usuario.trim(), doc.id);
+            console.log(`Líder encontrado: ${data.nombre_usuario.trim()} con ID: ${doc.id}`);
+        }
+    });
+    leaders.sort();
+    console.log('Líderes ordenados:', leaders);
+    console.log('Mapa de IDs:', Array.from(leaderIds.entries()));
+
+    if (leaders.length === 0) {
+        console.warn('No se encontraron líderes con rol "Lider" en la colección "usuarios".');
+    }
+
+    const reportsCol = collection(db, 'reportes');
+    const reportsQuery = query(reportsCol, orderBy('fecha', 'asc'));
+    const reportsSnapshot = await getDocs(reportsQuery);
+
+    // Determinar las últimas 5 semanas completas más la semana en curso
+    const currentDate = new Date('2025-07-18T13:11:00-05:00'); // Fecha actual (cambiar a new Date() en producción)
+    const weeks = [];
+    const weekStartDates = [];
+    const maxWeeks = 5; // Máximo de semanas completas a mostrar
+
+    // Encontrar el domingo de la semana actual
+    let currentWeek = getSunday(currentDate);
+    const currentWeekEnd = getSaturday(currentWeek);
+    const isCurrentWeekOngoing = currentDate <= currentWeekEnd;
+
+    // Fecha de inicio: 6 de julio de 2025 (primer domingo después del 30 de junio de 2025)
+    const firstPossibleWeek = new Date('2025-07-06T00:00:00-05:00');
+    // Calcular el número de semanas completas desde el inicio hasta la fecha actual
+    let weeksSinceStart = Math.floor((currentWeek - firstPossibleWeek) / (7 * 24 * 60 * 60 * 1000));
+    // Ajustar para incluir solo las últimas 5 semanas completas
+    let startWeekIndex = Math.max(0, weeksSinceStart - maxWeeks);
+    if (!isCurrentWeekOngoing) {
+        startWeekIndex++; // Si la semana actual está completa, empezar desde la siguiente
+    }
+
+    // Generar las semanas
+    for (let i = 0; i < maxWeeks; i++) {
+        const weekStart = new Date(firstPossibleWeek.getTime() + (startWeekIndex + i) * 7 * 24 * 60 * 60 * 1000);
+        const weekEnd = getSaturday(weekStart);
+        // Incluir semanas completas o la semana en curso
+        if (weekEnd < currentDate || (isCurrentWeekOngoing && weekStart.getTime() === currentWeek.getTime())) {
+            weeks.push(`Semana ${startWeekIndex + i + 1}`);
+            weekStartDates.push({ start: weekStart, end: weekEnd });
+        }
+    }
+
+    console.log('Semanas generadas:', weeks.map((w, i) => `${w}: ${weekStartDates[i].start.toISOString()} - ${weekStartDates[i].end.toISOString()}`));
+
+    const data = {};
+    leaders.forEach(leader => {
+        data[leader] = {
+            asistencia: {
+                milagros: Array(weeks.length).fill(0),
+                escuelaDominical: Array(weeks.length).fill(0),
+                evangelista: Array(weeks.length).fill(0),
+                totalMiembros: Array(weeks.length).fill(0),
+            },
+            conversiones: Array(weeks.length).fill(0),
+            hermanosPlaneando: Array(weeks.length).fill(0),
+            reportesEntregados: Array(weeks.length).fill(0),
+        };
+    });
+
+    const weeklyReports = {};
+    reportsSnapshot.forEach(doc => {
+        const report = doc.data();
+        const leader = report.nombre_usuario;
+        if (!leader || !data[leader]) return;
+
+        const reportDate = report.fecha.toDate();
+        const sunday = getSunday(reportDate);
+        const sundayKey = formatDate(sunday);
+
+        if (!weeklyReports[sundayKey]) {
+            weeklyReports[sundayKey] = {};
+        }
+        if (!weeklyReports[sundayKey][leader] || reportDate < weeklyReports[sundayKey][leader].timestampDate) {
+            weeklyReports[sundayKey][leader] = { ...report, timestampDate: reportDate };
+        }
+    });
+
+    weekStartDates.forEach((week, index) => {
+        const sundayKey = formatDate(week.start);
+
+        leaders.forEach(leader => {
+            const report = weeklyReports[sundayKey]?.[leader];
+            if (report) {
+                const milagrosAdultos = report.culto_milagros?.adultos || 0;
+                const milagrosNinos = report.culto_milagros?.ninos || 0;
+                data[leader].asistencia.milagros[index] = milagrosAdultos + milagrosNinos;
+
+                const dominicalAdultos = report.escuela_dominical?.adultos || 0;
+                const dominicalNinos = report.escuela_dominical?.ninos || 0;
+                data[leader].asistencia.escuelaDominical[index] = dominicalAdultos + dominicalNinos;
+
+                const evangelisticaAdultos = report.reunion_evangelistica?.adultos || 0;
+                const evangelisticaNinos = report.reunion_evangelistica?.ninos || 0;
+                data[leader].asistencia.evangelista[index] = evangelisticaAdultos + evangelisticaNinos;
+
+                data[leader].conversiones[index] = report.conversiones || 0;
+
+                data[leader].hermanosPlaneando[index] = report.hermanos_planeando || 0;
+
+                data[leader].reportesEntregados[index] = 1;
+            }
+        });
+    });
+
+    // Procesar Total Miembros desde la subcolección 'personas' en grupos_oracion
+    const gruposCol = collection(db, 'grupos_oracion');
+    for (const leader of leaders) {
+        const leaderId = leaderIds.get(leader);
+        console.log(`Procesando Total Miembros para líder: ${leader}, ID: ${leaderId}`);
+        if (leaderId) {
+            try {
+                const personasCol = collection(db, `grupos_oracion/${leaderId}/personas`);
+                const personasSnapshot = await getDocs(personasCol);
+                console.log(`Documentos totales en subcolección personas para ${leader} (ID: ${leaderId}): ${personasSnapshot.size}`);
+                console.log(`IDs de documentos en personas:`, personasSnapshot.docs.map(doc => doc.id));
+
+                weekStartDates.forEach((week, index) => {
+                    let totalPersonas = 0;
+                    // Si la semana está en curso (week.end >= currentDate), usar el conteo total
+                    if (week.end >= currentDate) {
+                        totalPersonas = personasSnapshot.size;
+                        console.log(`Semana ${startWeekIndex + index + 1} (en curso, hasta ${week.end.toISOString()}) para ${leader}: ${totalPersonas} personas (conteo actual)`);
+                    } else {
+                        // Para semanas terminadas, contar documentos con fecha_creacion <= fin de semana
+                        const weekEnd = new Date(week.end.getTime() + 24 * 60 * 60 * 1000 - 1); // Hasta 23:59:59 del sábado
+                        personasSnapshot.forEach(doc => {
+                            const personaData = doc.data();
+                            const fechaCreacion = personaData.fecha_creacion;
+                            if (fechaCreacion && fechaCreacion.toDate) {
+                                const creationDate = fechaCreacion.toDate();
+                                if (creationDate <= weekEnd) {
+                                    totalPersonas++;
+                                }
+                            } else {
+                                console.warn(`Documento ${doc.id} en personas para ${leader} no tiene fecha_creacion válida:`, personaData);
+                            }
+                        });
+                        console.log(`Semana ${startWeekIndex + index + 1} (${week.start.toISOString()} - ${weekEnd.toISOString()}) para ${leader}: ${totalPersonas} personas`);
+                    }
+                    data[leader].asistencia.totalMiembros[index] = totalPersonas;
+                });
+            } catch (error) {
+                console.error(`Error al consultar subcolección personas para el líder ${leader} (ID: ${leaderId}):`, error);
+                data[leader].asistencia.totalMiembros.fill(0);
+            }
+        } else {
+            console.warn(`No se encontró ID para el líder ${leader}`);
+            data[leader].asistencia.totalMiembros.fill(0);
+        }
+    }
+
+    console.log('Datos procesados:', JSON.stringify(data, null, 2));
+    return { data, weeks };
+}
+
+async function fetchAndProcessGeneralEvaluation() {
+    const chartAreaContainer = document.getElementById('chart-area-container');
+    const mainTitle = document.getElementById('main-title');
+
+    mainTitle.textContent = "Evaluación General";
+    chartAreaContainer.innerHTML = `<p>Cargando datos de evaluación general...</p>`;
+
+    try {
+        const { data, weeks } = await fetchGeneralEvaluationData();
+
+        let tableHTML = `
+            <div class="leaders-info">
+                <h2 class="section-title"></h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Líder</th>
+                            <th>Reporte</th>
+                            ${weeks.map(week => `<th>${week}</th>`).join('')}
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        const metricTypes = [
+            { name: 'Asistencia Culto Milagros', key: 'milagros' },
+            { name: 'Asistencia Escuela Dominical', key: 'escuelaDominical' },
+            { name: 'Asistencia Evangelística', key: 'evangelista' },
+            { name: 'Total Miembros', key: 'totalMiembros' },
+            { name: 'Conversiones', key: 'conversiones' },
+            { name: 'Hermanos Planeando', key: 'hermanosPlaneando' },
+            { name: 'Reportes Entregados', key: 'reportesEntregados' }
+        ];
+
+        for (const leader in data) {
+            const leaderData = data[leader];
+            const totalRows = metricTypes.length;
+
+            metricTypes.forEach((metric, index) => {
+                const isLastMetric = index === totalRows - 1;
+                const rowClass = isLastMetric ? 'leader-divider' : 'metric-row';
+                const rowspanAttr = index === 0 ? `rowspan="${totalRows}"` : '';
+                const leaderCell = index === 0 ? `<td ${rowspanAttr} class="leader-cell">${leader}</td>` : '';
+
+                tableHTML += `
+                    <tr class="${rowClass}">
+                        ${leaderCell}
+                        <td class="metric-cell">${metric.name}</td>
+                        ${metric.key === 'milagros' || metric.key === 'escuelaDominical' || metric.key === 'evangelista' || metric.key === 'totalMiembros'
+                            ? leaderData.asistencia[metric.key].map(value => `<td class="data-cell${value === 0 ? ' zero' : ''}">${value}</td>`).join('')
+                            : leaderData[metric.key].map(value => `<td class="data-cell${value === 0 ? ' zero' : ''}">${value}</td>`).join('')}
+                    </tr>
+                `;
+            });
+        }
+
+        tableHTML += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+        chartAreaContainer.innerHTML = tableHTML;
+
+    } catch (error) {
+        console.error("Error al cargar evaluación general:", error);
+        chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar la evaluación general: ${error.message}.</p>`;
+    }
+}
+
+function attachSubmenuLinkListeners() {
+    document.querySelectorAll('.submenu a[data-action="show-leader-chart"]').forEach(link => {
+        link.removeEventListener('click', handleSubmenuClick);
+        link.addEventListener('click', handleSubmenuClick);
+    });
+}
+
+function handleSubmenuClick(event) {
+    event.preventDefault();
+    const leaderName = event.target.dataset.leaderName;
+    fetchAndProcessMeetingData(leaderName);
+}
+
+document.querySelectorAll('.menu-list a[data-action]').forEach(link => {
+    link.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const action = event.target.dataset.action;
+
+        document.querySelectorAll('.menu-list li').forEach(li => {
+            li.classList.remove('active');
+        });
+
+        switch (action) {
+            case 'crecimiento-general':
+                await fetchAndProcessMeetingData();
+                break;
+            case 'conversiones':
+                await fetchAndProcessConversionsData();
+                break;
+            case 'planeando':
+                await fetchAndProcessPlanningData();
+                break;
+            case 'informe':
+                await fetchAndProcessResponsabilityData();
+                break;
+            case 'posicion-grupo':
+                await fetchAndProcessGroupRankingData();
+                break;
+            case 'evaluacion-general':
+                await fetchAndProcessGeneralEvaluation();
+                break;
+            default:
+                console.warn(`Acción desconocida: ${action}`);
+                document.getElementById('chart-area-container').innerHTML = `<p>Funcionalidad no implementada para la acción: ${action}</p>`;
+        }
+    });
+});
+
+document.querySelectorAll('.menu-list a[data-target="crecimiento"]').forEach(link => {
+    link.addEventListener('click', (event) => {
+        event.preventDefault();
+        const parentLi = event.target.closest('li');
+        parentLi.classList.toggle('active');
+    });
+});
+
+fetchLeadersAndPopulateMenu();
+
+</script>
+</body>
+

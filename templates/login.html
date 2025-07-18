@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar sesión</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            /* Asegúrate que 'static/fondo.jpg' exista en una carpeta 'static' al mismo nivel que 'app.py' */
+            background: url('../static/fondo.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            color: #fff;
+            text-align: center;
+            position: relative; /* Necesario para posicionar los mensajes flash */
+        }
+
+        .login-container h2 {
+            margin-bottom: 20px;
+            font-size: 28px;
+            color: #ffffff;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 15px;
+            background-color: #036a8d;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #014b63;
+        }
+
+        /* Estilos para los mensajes flash (errores, éxito, info) */
+        .flash-messages {
+            position: absolute;
+            top: 20px; /* Ajusta la posición vertical */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 300px;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            opacity: 0.95;
+            z-index: 1000; /* Asegura que esté sobre otros elementos */
+            text-align: center;
+            transition: opacity 0.5s ease-out; /* Transición para el efecto de desvanecimiento */
+        }
+
+        .flash-messages.error {
+            background-color: #f44336; /* Rojo para errores */
+            color: white;
+        }
+
+        .flash-messages.success {
+            background-color: #4CAF50; /* Verde para éxito */
+            color: white;
+        }
+
+        .flash-messages.info {
+            background-color: #2196F3; /* Azul para información */
+            color: white;
+        }
+
+        @media screen and (max-width: 480px) {
+            .login-container {
+                padding: 30px 20px;
+            }
+            .flash-messages {
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash-messages {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <h2>Iniciar sesión</h2>
+        <form method="POST" action="{{ url_for('login') }}">
+            <input type="email" name="email" placeholder="Correo" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+
+    <script>
+        // Este script hace que los mensajes flash desaparezcan después de 2 segundos
+        document.addEventListener('DOMContentLoaded', function() {
+            const flashMessages = document.querySelectorAll('.flash-messages');
+            flashMessages.forEach(function(message) {
+                setTimeout(() => {
+                    message.style.opacity = '0'; // Inicia la transición para desvanecer
+                    setTimeout(() => message.remove(), 500); // Elimina el elemento después de que la transición termine (0.5s)
+                }, 2000); // El mensaje permanece visible por 2 segundos
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Menú Iglesia</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: #ffffff;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .menu {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px; /* más espacio entre botones */
+    }
+
+    /* Aplica estos estilos a la nueva clase 'menu-link' para que los enlaces se vean como botones */
+    .menu-link {
+      background-color: #fff;
+      color: #222;
+      font-weight: bold;
+      font-size: 1.5rem;
+      border: none;
+      padding: 24px 40px; /* más alto */
+      width: 320px;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      text-decoration: none; /* Muy importante: quita el subrayado predeterminado de los enlaces */
+      display: flex; /* Permite centrar el texto dentro del enlace */
+      justify-content: center;
+      align-items: center;
+    }
+
+    .menu-link::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0%;
+      height: 4px;
+      background-color: #4169E1; /* Royal Blue */
+      transition: all 0.3s ease;
+      box-shadow: 0 0 10px #4169E1, 0 0 20px #4169E1;
+    }
+
+    .menu-link:hover::after {
+      width: 100%;
+    }
+
+    .menu-link:hover {
+      transform: translateY(-5px);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="menu">
+    <a href="{{ url_for('grupos_familiares') }}" class="menu-link">Grupos Familiares</a>
+    <a href="#" class="menu-link">Pastoral Juvenil</a> <a href="#" class="menu-link">Pastoral a la Niñez</a>
+    <a href="#" class="menu-link">Escuelas Bíblicas</a>
+    <a href="#" class="menu-link">Consolidación</a>
+  </div>
+
+</body>
+</html>
