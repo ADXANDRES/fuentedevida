@@ -1,22 +1,35 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import requests
 import os
+import firebase_admin
+from firebase_admin import credentials, initialize_app
 
-# Intenta obtener la clave de la API desde variables de entorno (ideal para Render)
+# Inicializar Firebase solo si no está ya inicializado
+if not firebase_admin._apps:
+    try:
+        # Ruta para Render (montada como secreto)
+        firebase_key_path = "/etc/secrets/serviceAccountKey.json"
+        if not os.path.exists(firebase_key_path):
+            # Ruta local (cuando desarrollas en tu PC)
+            firebase_key_path = os.path.join(os.path.dirname(__file__), "credenciales", "serviceAccountKey.json")
+
+        cred = credentials.Certificate(firebase_key_path)
+        initialize_app(cred)
+    except Exception as e:
+        print(f"Error al inicializar Firebase: {e}")
+        raise
+
+# Obtener la API_KEY de entorno o archivo local
 API_KEY = os.getenv("FIREBASE_API_KEY")
-
-# Si no está en variables de entorno (ej. en local), intenta cargarla desde un archivo local
 if not API_KEY:
     try:
         from credenciales import API_KEY as LOCAL_API_KEY
         API_KEY = LOCAL_API_KEY
     except ImportError:
-        raise Exception("No se encontró la clave API. Asegúrate de tener FIREBASE_API_KEY o credenciales.py.")
+        raise Exception("No se encontró la clave API. Usa una variable de entorno 'FIREBASE_API_KEY' o el archivo 'credenciales.py'.")
 
-# Configura la app de Flask
+# Configuración de la aplicación Flask
 app = Flask(__name__)
-
-# Clave secreta para manejar sesiones (también puede venir de entorno o usar valor por defecto)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "clave_local_segura")
 
 @app.route("/", methods=["GET", "POST"])
@@ -25,7 +38,6 @@ def login():
         email = request.form["email"]
         password = request.form["password"]
 
-        # URL para autenticación con Firebase
         url = f"https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key={API_KEY}"
         payload = {
             "email": email,
@@ -38,7 +50,6 @@ def login():
             res.raise_for_status()
             data = res.json()
 
-            # Si el login fue exitoso
             session["user"] = data["localId"]
             flash("Inicio de sesión exitoso.", "success")
             return redirect(url_for("bienvenida"))
@@ -73,5 +84,11 @@ def logout():
     flash("Has cerrado sesión correctamente.", "success")
     return redirect(url_for("login"))
 
+# ✅ Ruta de verificación de salud para Render
+@app.route("/salud")
+def salud():
+    return "Aplicación funcionando correctamente.", 200
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(debug=True, host="0.0.0.0", port=port)
