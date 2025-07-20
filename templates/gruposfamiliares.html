@@ -1800,11 +1800,11 @@
 
 
 
-        
-
-
-        async function fetchGeneralEvaluationData() {
+        // Obtiene y procesa los datos para la evaluación general
+async function fetchGeneralEvaluationData() {
     console.log('Iniciando fetchGeneralEvaluationData...');
+    
+    // Obtener líderes desde la colección 'usuarios'
     const usersCol = collection(db, 'usuarios');
     const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
     const usersSnapshot = await getDocs(usersQuery);
@@ -1824,17 +1824,19 @@
 
     if (leaders.length === 0) {
         console.warn('No se encontraron líderes con rol "Lider" en la colección "usuarios".');
+        throw new Error('No se encontraron líderes.');
     }
 
+    // Obtener reportes desde la colección 'reportes'
     const reportsCol = collection(db, 'reportes');
     const reportsQuery = query(reportsCol, orderBy('fecha', 'asc'));
     const reportsSnapshot = await getDocs(reportsQuery);
 
-    // Determinar las últimas 5 semanas completas más la semana en curso
-    const currentDate = new Date('2025-07-18T13:11:00-05:00'); // Fecha actual (cambiar a new Date() en producción)
+    // Determinar las últimas 5 semanas, incluyendo la semana en curso si está en curso
+    const currentDate = new Date(); // Fecha actual (20 de julio de 2025, 12:26 PM -05)
     const weeks = [];
     const weekStartDates = [];
-    const maxWeeks = 5; // Máximo de semanas completas a mostrar
+    const maxWeeks = 5; // Máximo de semanas a mostrar
 
     // Encontrar el domingo de la semana actual
     let currentWeek = getSunday(currentDate);
@@ -1845,25 +1847,20 @@
     const firstPossibleWeek = new Date('2025-07-06T00:00:00-05:00');
     // Calcular el número de semanas completas desde el inicio hasta la fecha actual
     let weeksSinceStart = Math.floor((currentWeek - firstPossibleWeek) / (7 * 24 * 60 * 60 * 1000));
-    // Ajustar para incluir solo las últimas 5 semanas completas
-    let startWeekIndex = Math.max(0, weeksSinceStart - maxWeeks);
-    if (!isCurrentWeekOngoing) {
-        startWeekIndex++; // Si la semana actual está completa, empezar desde la siguiente
-    }
+    // Ajustar para incluir las últimas 5 semanas
+    let startWeekIndex = Math.max(0, weeksSinceStart - maxWeeks + (isCurrentWeekOngoing ? 1 : 0));
 
-    // Generar las semanas
+    // Generar las 5 semanas
     for (let i = 0; i < maxWeeks; i++) {
         const weekStart = new Date(firstPossibleWeek.getTime() + (startWeekIndex + i) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = getSaturday(weekStart);
-        // Incluir semanas completas o la semana en curso
-        if (weekEnd < currentDate || (isCurrentWeekOngoing && weekStart.getTime() === currentWeek.getTime())) {
-            weeks.push(`Semana ${startWeekIndex + i + 1}`);
-            weekStartDates.push({ start: weekStart, end: weekEnd });
-        }
+        weeks.push(`Semana ${startWeekIndex + i + 1}`);
+        weekStartDates.push({ start: weekStart, end: weekEnd });
     }
 
     console.log('Semanas generadas:', weeks.map((w, i) => `${w}: ${weekStartDates[i].start.toISOString()} - ${weekStartDates[i].end.toISOString()}`));
 
+    // Inicializar estructura de datos para cada líder
     const data = {};
     leaders.forEach(leader => {
         data[leader] = {
@@ -1879,10 +1876,11 @@
         };
     });
 
+    // Procesar reportes y asignarlos a las semanas correspondientes
     const weeklyReports = {};
     reportsSnapshot.forEach(doc => {
         const report = doc.data();
-        const leader = report.nombre_usuario;
+        const leader = report.nombre_usuario?.trim();
         if (!leader || !data[leader]) return;
 
         const reportDate = report.fecha.toDate();
@@ -1892,14 +1890,15 @@
         if (!weeklyReports[sundayKey]) {
             weeklyReports[sundayKey] = {};
         }
-        if (!weeklyReports[sundayKey][leader] || reportDate < weeklyReports[sundayKey][leader].timestampDate) {
+        // Usar el reporte más reciente por líder y semana
+        if (!weeklyReports[sundayKey][leader] || reportDate > (weeklyReports[sundayKey][leader]?.timestampDate || new Date(0))) {
             weeklyReports[sundayKey][leader] = { ...report, timestampDate: reportDate };
         }
     });
 
+    // Asignar datos a las semanas
     weekStartDates.forEach((week, index) => {
         const sundayKey = formatDate(week.start);
-
         leaders.forEach(leader => {
             const report = weeklyReports[sundayKey]?.[leader];
             if (report) {
@@ -1938,28 +1937,22 @@
 
                 weekStartDates.forEach((week, index) => {
                     let totalPersonas = 0;
-                    // Si la semana está en curso (week.end >= currentDate), usar el conteo total
-                    if (week.end >= currentDate) {
-                        totalPersonas = personasSnapshot.size;
-                        console.log(`Semana ${startWeekIndex + index + 1} (en curso, hasta ${week.end.toISOString()}) para ${leader}: ${totalPersonas} personas (conteo actual)`);
-                    } else {
-                        // Para semanas terminadas, contar documentos con fecha_creacion <= fin de semana
-                        const weekEnd = new Date(week.end.getTime() + 24 * 60 * 60 * 1000 - 1); // Hasta 23:59:59 del sábado
-                        personasSnapshot.forEach(doc => {
-                            const personaData = doc.data();
-                            const fechaCreacion = personaData.fecha_creacion;
-                            if (fechaCreacion && fechaCreacion.toDate) {
-                                const creationDate = fechaCreacion.toDate();
-                                if (creationDate <= weekEnd) {
-                                    totalPersonas++;
-                                }
-                            } else {
-                                console.warn(`Documento ${doc.id} en personas para ${leader} no tiene fecha_creacion válida:`, personaData);
+                    // Contar personas creadas hasta el final de la semana
+                    const weekEnd = new Date(week.end.getTime() + 24 * 60 * 60 * 1000 - 1); // Hasta 23:59:59 del sábado
+                    personasSnapshot.forEach(doc => {
+                        const personaData = doc.data();
+                        const fechaCreacion = personaData.fecha_creacion;
+                        if (fechaCreacion && fechaCreacion.toDate) {
+                            const creationDate = fechaCreacion.toDate();
+                            if (creationDate <= weekEnd) {
+                                totalPersonas++;
                             }
-                        });
-                        console.log(`Semana ${startWeekIndex + index + 1} (${week.start.toISOString()} - ${weekEnd.toISOString()}) para ${leader}: ${totalPersonas} personas`);
-                    }
+                        } else {
+                            console.warn(`Documento ${doc.id} en personas para ${leader} no tiene fecha_creacion válida:`, personaData);
+                        }
+                    });
                     data[leader].asistencia.totalMiembros[index] = totalPersonas;
+                    console.log(`Semana ${startWeekIndex + index + 1} (${week.start.toISOString()} - ${weekEnd.toISOString()}) para ${leader}: ${totalPersonas} personas`);
                 });
             } catch (error) {
                 console.error(`Error al consultar subcolección personas para el líder ${leader} (ID: ${leaderId}):`, error);
@@ -1975,6 +1968,7 @@
     return { data, weeks };
 }
 
+// Muestra la evaluación general en una tabla
 async function fetchAndProcessGeneralEvaluation() {
     const chartAreaContainer = document.getElementById('chart-area-container');
     const mainTitle = document.getElementById('main-title');
@@ -2045,6 +2039,7 @@ async function fetchAndProcessGeneralEvaluation() {
     }
 }
 
+// Asocia los eventos a los enlaces del submenú
 function attachSubmenuLinkListeners() {
     document.querySelectorAll('.submenu a[data-action="show-leader-chart"]').forEach(link => {
         link.removeEventListener('click', handleSubmenuClick);
@@ -2052,12 +2047,14 @@ function attachSubmenuLinkListeners() {
     });
 }
 
+// Maneja los clics en los enlaces del submenú
 function handleSubmenuClick(event) {
     event.preventDefault();
     const leaderName = event.target.dataset.leaderName;
     fetchAndProcessMeetingData(leaderName);
 }
 
+// Asocia los eventos a los enlaces del menú principal
 document.querySelectorAll('.menu-list a[data-action]').forEach(link => {
     link.addEventListener('click', async (event) => {
         event.preventDefault();
@@ -2093,6 +2090,7 @@ document.querySelectorAll('.menu-list a[data-action]').forEach(link => {
     });
 });
 
+// Maneja el clic en el menú de crecimiento para mostrar el submenú
 document.querySelectorAll('.menu-list a[data-target="crecimiento"]').forEach(link => {
     link.addEventListener('click', (event) => {
         event.preventDefault();
@@ -2101,8 +2099,8 @@ document.querySelectorAll('.menu-list a[data-target="crecimiento"]').forEach(lin
     });
 });
 
+// Inicializa la carga de líderes
 fetchLeadersAndPopulateMenu();
 
 </script>
 </body>
-
