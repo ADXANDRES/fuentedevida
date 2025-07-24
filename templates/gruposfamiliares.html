@@ -297,8 +297,6 @@
             top: 0;
             z-index: 10;
             padding: 16px;
-       
-
         }
 
         .data-table td {
@@ -357,9 +355,6 @@
         .data-table tr.metric-row {
             border-bottom: 1px solid #d1d5db;
         }
-
-
-        
     </style>
 </head>
 <body>
@@ -375,8 +370,9 @@
                 </li>
                 <li><a href="#" data-action="conversiones">Conversiones</a></li>
                 <li><a href="#" data-action="planeando">Planeando</a></li>
-                <li><a href="#" data-action="informe">Informe</a></li>
+                <li><a href="#" data-action="integrantes">Integrantes</a></li>
                 <li><a href="#" data-action="posicion-grupo">Posición de Grupo</a></li>
+                <li><a href="#" data-action="informe">Informe</a></li>
                 <li><a href="#" data-action="evaluacion-general">Evaluación General</a></li>
             </ul>
             <a href="/bienvenida" class="back-button">Menú Principal</a>
@@ -1796,10 +1792,6 @@
         }
 
 
-
-
-
-
         // Obtiene y procesa los datos para la evaluación general
 async function fetchGeneralEvaluationData() {
     console.log('Iniciando fetchGeneralEvaluationData...');
@@ -1833,10 +1825,10 @@ async function fetchGeneralEvaluationData() {
     const reportsSnapshot = await getDocs(reportsQuery);
 
     // Determinar las últimas 5 semanas, incluyendo la semana en curso si está en curso
-    const currentDate = new Date(); // Fecha actual (20 de julio de 2025, 12:26 PM -05)
+    const currentDate = new Date();
     const weeks = [];
     const weekStartDates = [];
-    const maxWeeks = 5; // Máximo de semanas a mostrar
+    const maxWeeks = 5;
 
     // Encontrar el domingo de la semana actual
     let currentWeek = getSunday(currentDate);
@@ -1868,7 +1860,6 @@ async function fetchGeneralEvaluationData() {
                 milagros: Array(weeks.length).fill(0),
                 escuelaDominical: Array(weeks.length).fill(0),
                 evangelista: Array(weeks.length).fill(0),
-                totalMiembros: Array(weeks.length).fill(0),
             },
             conversiones: Array(weeks.length).fill(0),
             hermanosPlaneando: Array(weeks.length).fill(0),
@@ -1923,47 +1914,6 @@ async function fetchGeneralEvaluationData() {
         });
     });
 
-    // Procesar Total Miembros desde la subcolección 'personas' en grupos_oracion
-    const gruposCol = collection(db, 'grupos_oracion');
-    for (const leader of leaders) {
-        const leaderId = leaderIds.get(leader);
-        console.log(`Procesando Total Miembros para líder: ${leader}, ID: ${leaderId}`);
-        if (leaderId) {
-            try {
-                const personasCol = collection(db, `grupos_oracion/${leaderId}/personas`);
-                const personasSnapshot = await getDocs(personasCol);
-                console.log(`Documentos totales en subcolección personas para ${leader} (ID: ${leaderId}): ${personasSnapshot.size}`);
-                console.log(`IDs de documentos en personas:`, personasSnapshot.docs.map(doc => doc.id));
-
-                weekStartDates.forEach((week, index) => {
-                    let totalPersonas = 0;
-                    // Contar personas creadas hasta el final de la semana
-                    const weekEnd = new Date(week.end.getTime() + 24 * 60 * 60 * 1000 - 1); // Hasta 23:59:59 del sábado
-                    personasSnapshot.forEach(doc => {
-                        const personaData = doc.data();
-                        const fechaCreacion = personaData.fecha_creacion;
-                        if (fechaCreacion && fechaCreacion.toDate) {
-                            const creationDate = fechaCreacion.toDate();
-                            if (creationDate <= weekEnd) {
-                                totalPersonas++;
-                            }
-                        } else {
-                            console.warn(`Documento ${doc.id} en personas para ${leader} no tiene fecha_creacion válida:`, personaData);
-                        }
-                    });
-                    data[leader].asistencia.totalMiembros[index] = totalPersonas;
-                    console.log(`Semana ${startWeekIndex + index + 1} (${week.start.toISOString()} - ${weekEnd.toISOString()}) para ${leader}: ${totalPersonas} personas`);
-                });
-            } catch (error) {
-                console.error(`Error al consultar subcolección personas para el líder ${leader} (ID: ${leaderId}):`, error);
-                data[leader].asistencia.totalMiembros.fill(0);
-            }
-        } else {
-            console.warn(`No se encontró ID para el líder ${leader}`);
-            data[leader].asistencia.totalMiembros.fill(0);
-        }
-    }
-
     console.log('Datos procesados:', JSON.stringify(data, null, 2));
     return { data, weeks };
 }
@@ -1997,7 +1947,6 @@ async function fetchAndProcessGeneralEvaluation() {
             { name: 'Asistencia Culto Milagros', key: 'milagros' },
             { name: 'Asistencia Escuela Dominical', key: 'escuelaDominical' },
             { name: 'Asistencia Evangelística', key: 'evangelista' },
-            { name: 'Total Miembros', key: 'totalMiembros' },
             { name: 'Conversiones', key: 'conversiones' },
             { name: 'Hermanos Planeando', key: 'hermanosPlaneando' },
             { name: 'Reportes Entregados', key: 'reportesEntregados' }
@@ -2017,7 +1966,7 @@ async function fetchAndProcessGeneralEvaluation() {
                     <tr class="${rowClass}">
                         ${leaderCell}
                         <td class="metric-cell">${metric.name}</td>
-                        ${metric.key === 'milagros' || metric.key === 'escuelaDominical' || metric.key === 'evangelista' || metric.key === 'totalMiembros'
+                        ${metric.key === 'milagros' || metric.key === 'escuelaDominical' || metric.key === 'evangelista'
                             ? leaderData.asistencia[metric.key].map(value => `<td class="data-cell${value === 0 ? ' zero' : ''}">${value}</td>`).join('')
                             : leaderData[metric.key].map(value => `<td class="data-cell${value === 0 ? ' zero' : ''}">${value}</td>`).join('')}
                     </tr>
@@ -2037,6 +1986,202 @@ async function fetchAndProcessGeneralEvaluation() {
         console.error("Error al cargar evaluación general:", error);
         chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar la evaluación general: ${error.message}.</p>`;
     }
+}
+
+
+
+
+
+
+// Obtiene y procesa los datos para el ranking de integrantes
+async function fetchAndProcessMembersRankingData() {
+    const chartAreaContainer = document.getElementById('chart-area-container');
+    const mainTitle = document.getElementById('main-title');
+
+    mainTitle.textContent = "Ranking de Integrantes";
+    chartAreaContainer.innerHTML = `<p>Cargando ranking de integrantes...</p>`;
+
+    try {
+        // Obtener líderes desde la colección 'usuarios'
+        const usersCol = collection(db, 'usuarios');
+        const usersQuery = query(usersCol, where('rol', '==', 'Lider'));
+        const usersSnapshot = await getDocs(usersQuery);
+        const leaders = [];
+        const leaderIds = new Map();
+        usersSnapshot.forEach(doc => {
+            const data = doc.data();
+            if (data.nombre_usuario && typeof data.nombre_usuario === 'string' && data.nombre_usuario.trim() !== '') {
+                leaders.push(data.nombre_usuario.trim());
+                leaderIds.set(data.nombre_usuario.trim(), doc.id);
+            }
+        });
+        leaders.sort();
+
+        if (leaders.length === 0) {
+            console.warn('No se encontraron líderes con rol "Lider" en la colección "usuarios".');
+            chartAreaContainer.innerHTML = `<p>No se encontraron líderes.</p>`;
+            return;
+        }
+
+        // Obtener el número de integrantes por líder
+        const rankingData = [];
+        for (const leader of leaders) {
+            const leaderId = leaderIds.get(leader);
+            if (!leaderId) {
+                console.warn(`No se encontró ID para el líder ${leader}`);
+                rankingData.push({ leader, totalMiembros: 0 });
+                continue;
+            }
+
+            try {
+                const personasCol = collection(db, `grupos_oracion/${leaderId}/personas`);
+                const personasSnapshot = await getDocs(personasCol);
+                const totalMiembros = personasSnapshot.size; // Contar número de documentos
+                console.log(`Líder ${leader} (ID: ${leaderId}) tiene ${totalMiembros} integrantes`);
+                rankingData.push({ leader, totalMiembros });
+            } catch (error) {
+                console.error(`Error al consultar subcolección personas para el líder ${leader} (ID: ${leaderId}):`, error);
+                rankingData.push({ leader, totalMiembros: 0 });
+            }
+        }
+
+        // Ordenar por totalMiembros (de mayor a menor)
+        rankingData.sort((a, b) => b.totalMiembros - a.totalMiembros);
+
+        // Renderizar el gráfico
+        renderMembersRankingChart(rankingData);
+
+    } catch (error) {
+        console.error("Error al cargar ranking de integrantes:", error);
+        chartAreaContainer.innerHTML = `<p style="color: red;">Error al cargar el ranking de integrantes: ${error.message}.</p>`;
+    }
+}
+
+// Renderiza el gráfico de ranking de integrantes
+function renderMembersRankingChart(rankingData) {
+    const chartAreaContainer = document.getElementById('chart-area-container');
+    chartAreaContainer.innerHTML = `<div class="chart-container"><canvas id="membersRankingChart"></canvas></div>`;
+
+    const ctx = document.getElementById('membersRankingChart').getContext('2d');
+
+    // Destruir gráfico anterior si existe
+    if (myCharts['membersRankingChart']) {
+        myCharts['membersRankingChart'].destroy();
+    }
+
+    // Generar colores y patrones cíclicos basados en colorPalette
+    const labels = rankingData.map(item => item.leader);
+    const backgroundColors = labels.map((_, index) => {
+        const patternType = colorPalette[index % colorPalette.length].patternType;
+        return createPattern(ctx, colorPalette[index % colorPalette.length].baseColor, patternType);
+    });
+    const borderColors = labels.map((_, index) => colorPalette[index % colorPalette.length].baseColor.replace('0.9', '1'));
+
+    // Generar nombres de líderes para etiquetas personalizadas
+    const leaderNames = labels.map(name => name);
+
+    myCharts['membersRankingChart'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Integrantes',
+                data: rankingData.map(item => item.totalMiembros),
+                backgroundColor: backgroundColors,
+                borderColor: borderColors,
+                borderWidth: 1,
+                borderRadius: 5,
+                leaderNames: leaderNames
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                title: {
+                    display: false
+                },
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        font: {
+                            size: 14
+                        },
+                        color: '#333'
+                    }
+                },
+                datalabels: {
+                    anchor: 'center',
+                    align: 'center',
+                    formatter: (value) => value > 0 ? value : '',
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    textShadowBlur: 5,
+                    textShadowColor: 'rgba(0, 0, 0, 0.8)'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const leader = context.label;
+                            const total = context.raw;
+                            return `${leader}: ${total} integrantes`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Número de Integrantes',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        color: '#333'
+                    },
+                    ticks: {
+                        stepSize: 1,
+                        callback: function(value) {
+                            if (value % 1 === 0) {
+                                return value;
+                            }
+                        }
+                    },
+                    grid: {
+                        display: false
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Líderes',
+                        font: {
+                            size: 14,
+                            weight: 'bold'
+                        },
+                        color: '#333'
+                    },
+                    ticks: {
+                        font: {
+                            weight: 'bold'
+                        },
+                        color: '#333'
+                    },
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        },
+        plugins: [customDatalabelsPlugin]
+    });
 }
 
 // Asocia los eventos a los enlaces del submenú
@@ -2083,6 +2228,9 @@ document.querySelectorAll('.menu-list a[data-action]').forEach(link => {
             case 'evaluacion-general':
                 await fetchAndProcessGeneralEvaluation();
                 break;
+            case 'integrantes':
+                await fetchAndProcessMembersRankingData();
+                break;
             default:
                 console.warn(`Acción desconocida: ${action}`);
                 document.getElementById('chart-area-container').innerHTML = `<p>Funcionalidad no implementada para la acción: ${action}</p>`;
@@ -2101,6 +2249,12 @@ document.querySelectorAll('.menu-list a[data-target="crecimiento"]').forEach(lin
 
 // Inicializa la carga de líderes
 fetchLeadersAndPopulateMenu();
+// Inicializa la carga de líderes
+fetchLeadersAndPopulateMenu();
 
 </script>
 </body>
+
+
+
+
